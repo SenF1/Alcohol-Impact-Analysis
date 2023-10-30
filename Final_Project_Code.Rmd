@@ -1,0 +1,271 @@
+---
+title: "How Does Alcohol Affect Students' Performance?"
+author: "Serena Yao, Sen Feng, David Lee, Isabel Lawrence"
+date: "December 16, 2022"
+output: pdf_document
+---
+
+```{r, echo = FALSE, results = FALSE, message = FALSE}
+# To load the data and necessary packages.
+rm(list=ls())
+library(tidyverse)
+library(ggplot2)
+library(stargazer)
+library(dplyr)
+
+student <- read_csv("student-mat.csv") 
+
+```
+
+# Summary
+
+The purpose of this report is to study the relationship between high school students' personal factors, such as their average test grades, and their overall alcohol consumption. Our analysis was carried out through cross-examination of qualitative variables such as sex, age, parent occupation/education of Portuguese high school students, and the student's tendency to consume alcohol. As a result, the impact of student alcohol consumption on math examination performance was observed for students who drank during the week rather than on weekends. Since alcohol is a depressant, consuming too much of it has been shown to slow down brain activity and slow down our reflexes. Higher alcohol levels can lead to slower reaction times, decreased attention span, and impaired judgment, all of which can affect school performance and other quality-of-life matters as well. However, if used in moderation (1-2 drinks), a few drinks of alcohol can help relieve stress and tension which could indirectly benefit how well we perform in school or at work. From our study, with limited sample size and from limited variable knowledge, we found that overall higher levels of alcohol decreased average grades for those students. 
+
+
+\pagebreak
+\newpage
+
+# 1. Introduction
+
+Underage drinking has been a serious public health problem in many countries including the United States and Portugal. As alcohol is the most widely used substance among youth, it generally creates concerns among parents and school administrators. There has been a debate on whether drinking alcohol has an effect on students’ performance. It is still unclear if the student’s performance will be affected by alcohol consumption. Some research has shown alcohol consumption negatively affects students as they are more likely to skip classes, get lower grades and even drop out of school. Other studies have reported that drinking alcohol has no significant effect on the student’s performance. 
+
+When examining underage alcohol consumption from a cultural lens one study concluded that on a scale of 1-4 with 1 being the least hazardous drinking habit and 4 being the most hazardous, Portugal scored a 1 whereas the US scored a 2. It can be said that these differences have much to do with their different cultural practices which in turn have a heavy influence on their various social practices and norms. Another thing to note is the fact that no country has such a high minimum drinking age of 21 years old as the United States does. Portugal on the other hand has a minimum drinking age of 18, which is a far more common minimum age when compared to other countries across the globe. This in turn would suggest that underage drinking would be less culturally and socially acceptable in the US and based on the observations in this study, U.S. teenagers are far less likely to be regular drinkers and heavy drinkers when they do consume alcohol when compared to their European counterparts.
+
+According to the 2018 US National Institute on Alcohol Abuse and Alcoholism, 29.8 percent of 15-year-olds report that they have had at least 1 drink in their lives. In the past month, about 7.1 million people ages 12–20 (18.8 percent of this age group) reported drinking alcohol, 11.4 percent reported binge drinking, and 2.3 percent reported heavy alcohol use.
+
+To examine the relationship between alcohol and academic performance, analysis was conducted on a dataset collected from two Portuguese secondary schools (Gabriel Pereira and Mousinho da Silveira). We intend to investigate and understand which variables are associated with alcohol consumption behavior.
+
+# 2. Data
+
+## 2.1. Data Sources and Scope of Analysis
+
+Dataset was obtained from [Kaggle](https://www.kaggle.com/datasets/uciml/student-alcohol-consumption?select=student-mat.csv) but originally comes from The University of Minho which is a public university in Portugal. The data approach student achievement in two Portuguese secondary schools (Gabriel Pereira and Mousinho da Silveira) and was collected by using school reports and questionnaires. 
+
+While the dataset consisted of two separate sets for math and Portuguese courses, we chose to focus on the math set to narrow the scope and avoid overlapping observations. Students' math grades is more valuable as mathematics promotes mental discipline and encourages logical reasoning and mental rigor. 
+
+The dataset used for the analysis is student-mat. This dataset provides information on each 395 students 15-22 years old regarding their grades, demographic, parental, social, and school-related features. This dataset contains 33 variables, we only select 18 which we consider to be the most important for our analysis,
+as shown in the table below.
+
+```{r, results = 'asis', echo= FALSE, warning = FALSE, message = FALSE}
+# Modify the sex column so that that female is 0 and male is 1. Original data used char 'M' and 'F'
+student$sex <- ifelse(student$sex == "M", 1, 0)
+
+# Modify the address column so that that urban is 0 and rural is 1. Original data used char 'U' and 'R'
+student$address <- ifelse(student$address == "R", 1, 0)
+
+student_var <- matrix(c("student’s sex (binary: 0 - female and 1 - male)",
+                  "student’s age (numeric: from 15 to 22)",
+                  "student’s home address type (binary: 0 - urban and 1 - rural)",
+                  "weekly study time (numeric: 1 – < 2 hours to 4 – > 10 hours)",
+                  "number of past class failures (numeric: n if 1 <= n < 3, else 4)",
+                  "weekend alcohol consumption (numeric: from 1 – very low to 5 – very high)",
+                  "workday alcohol consumption (numeric: from 1 – very low to 5 – very high)",
+                  "current health status (numeric: from 1 – very bad to 5 – very good)",
+                  "number of school absences (numeric: from 0 to 93)",
+                  "first period grade (numeric: from 0 to 20)",
+                  "second period grade (numeric: from 0 to 20)",
+                  "final grade (numeric: from 0 to 20)"),ncol=1)
+colnames(student_var) <- c("Description")
+rownames(student_var) <- c("sex","age", "address", "studytime", "failures", "Walc", "Dalc", "health", "absences", "G1","G2","G3")
+stargazer(student_var, type="latex",
+          title = "Student-related Attributes",
+          covariate.labels = c("Name"), 
+          notes.label = "",
+          header = FALSE)
+
+```
+
+
+```{r, results = 'asis', echo= FALSE, warning = FALSE, message = FALSE}
+# Modify the sex column so that that female is 0 and male is 1. Original data used char 'M' and 'F'
+student$Pstatus <- ifelse(student$Pstatus == "T", 1, 0)
+
+parent_var <- matrix(c("parent’s cohabitation status (binary: 0 - apart or 1 - living together)",
+                  "mother’s education (numeric: from 0 to 4)",
+                  "mother’s job (nominal)",
+                  "father’s education (numeric: from 0 to 4)",
+                  "father’s job (nominal)",
+                  "family size (binary: <= 3 or > 3)",
+                  "quality of family relationships (numeric: from 1 – very bad to 5 – excellent)"),ncol=1)
+colnames(parent_var) <- c("Description")
+rownames(parent_var) <- c("Pstatus", "Medu", "Mjob", "Fedu", "Fjob", "famsize", "famrel")
+stargazer(parent_var, type="latex",
+          title = "Parent-related Attributes",
+          covariate.labels = c("Name"), 
+          notes.label = "",
+          notes = c("Education Level: 0 – none, 1 – primary education (4th grade), 2 – 5th to 9th grade, 3 – secondary",
+                    "education or 4 – higher education.",
+                     "Occupation: teacher, health care related, civil services (e.g. administrative or police), at home or other."),
+          header = FALSE)
+
+```
+
+\pagebreak
+\newpage
+
+## 2.2. Summary statistics
+
+```{r, results = 'asis', echo= FALSE, warning = FALSE, message = FALSE}
+# Create average grade from the three marking period grades
+student <- student %>% mutate(meanGrade = rowMeans(across(G1:G3), na.rm = TRUE))
+
+# Create the summary statistics table.
+myvars <- c("sex","age", "Pstatus", "Medu", "Fedu", "famrel","studytime", "failures", "Walc", "Dalc", "health", "absences", "G1","G2","G3", "meanGrade")
+substudent<-student[myvars]
+stargazer(as.data.frame(substudent),
+          type = "latex", 
+          digits = 2,
+          title = "Summary Statistics",
+          covariate.labels = c("Sex",
+                               "Age",
+                               "Parent’s Cohabitation Status",
+                               "Mother’s Education",
+                               "Father’s Education",
+                               "Quality of Family Relationships",
+                               "Weekly Study Time",
+                               "Number of Past Class Failures",
+                               "Weekend Alcohol Consumption",
+                               "Workday Alcohol Consumption",
+                               "Current Health Status",
+                               "Number of School Absences",
+                               "First Period Grade",
+                               "Second Period Grade",
+                               "Final Period Grade",
+                               "Average Grade from Three Period"),
+          omit.summary.stat = "N",
+          notes.label = "Notes",
+          notes = c("The grades are based on a 20-point", "scale which is the most common",
+          "grading system in Portugal."),
+          header = FALSE)
+
+```
+\pagebreak
+\newpage
+
+# 3. Analysis
+
+## 3.1 Data Exploration
+
+We first look at the distribution of grades across all there marking periods. The grades are mostly allocated over a normal distribution beside a peak with students receiving zeros on the final period. 
+
+```{r, echo= FALSE, warning = FALSE, message = FALSE, out.width="33%"}
+
+barplot(table(student$G1), xlab="Grades (scale 0-20)", ylab="Number of Students", col = "red")
+barplot(table(student$G2), xlab="Grades (scale 0-20)", ylab="Number of Students", col = "orange")
+barplot(table(student$G3), xlab="Grades (scale 0-20)", ylab="Number of Students", col = "yellow")
+
+```
+
+Then we used boxplots to visualize the level of alcohol consumption both on workday and weekend. There seems to be a trend that the math grades decreases as alcohol intake increases from levels 1 to 4. However, we observed unexpected outcome for level 5. The small sample size made our data less significant than other levels. 
+
+```{r, echo= FALSE, warning = FALSE, message = FALSE, out.width="50%"}
+
+boxplot(student$meanGrade~student$Dalc,
+        col=c("red", "orange", "yellow", "green", "magenta"),
+        main = "Workday Alcohol Consumption Level On Grades",
+        ylab = "Grade", xlab = "Workday Alcohol Consumption Level")
+
+boxplot(student$meanGrade~student$Walc,
+        col=c("red", "orange", "yellow", "green", "magenta"),
+        main = "Weekend Alcohol Consumption Level On Grades",
+        ylab = "Grade", xlab = "Weekend Alcohol Consumption Level")
+
+```
+Given the small number of observations for alcohol consumption levels 4 and 5, we combined them into level 3 to observe trends with higher sample sizes.
+
+```{r, echo= FALSE, warning = FALSE, message = FALSE, out.width="50%"}
+
+student <- student %>% mutate(Dalc = case_when(Dalc == 1 ~ '1', Dalc == 2 ~ '2', Dalc >= 3 ~ '3'))
+student <- student %>% mutate(Walc = case_when(Dalc == 1 ~ '1', Dalc == 2 ~ '2', Dalc >= 3 ~ '3'))
+
+boxplot(student$meanGrade~student$Dalc,
+        col=c("red", "orange", "yellow"),
+        main = "Workday Alcohol Consumption Level On Grades",
+        ylab = "Grade", xlab = "Workday Alcohol Consumption Level")
+
+boxplot(student$meanGrade~student$Walc,
+        col=c("red", "orange", "yellow"),
+        main = "Weekend Alcohol Consumption Level On Grades",
+        ylab = "Grade", xlab = "Weekend Alcohol Consumption Level")
+
+```
+The updated boxplots shows that a higher level of alcohol consumption among students results in a lower average grade. Although the mean for the highest alcohol consumption is a little higher than the previous level, we can observe that overall range decreased. 
+
+## 3.2 Linear Regressions
+
+### 3.2.1 Alcohol Consumption
+\[
+meanGrade = \alpha + \beta_1 alcoholConsumption + \epsilon_i, 
+\]
+Where i is equal to each individual student,  $Y_i$ is equal to the math grade, and $X_{1i}$ is equal to their alcohol consumption level 
+
+```{r, results = 'asis', echo= FALSE, warning = FALSE, message = FALSE}
+fit1 <- lm(meanGrade ~ as.factor(Dalc), data = student)
+stargazer(fit1, type = "latex", title = "Alcohol Consumption", header = FALSE)
+
+```
+This regression table shows that consuming alcohol decreases the average mean math score. To interpretate the regression table, we observed that with every level increase in alcohol consumption level, the mean math score is predicted to decrease. 
+From the regression residuals, we see that our residuals were relative symmetrical and that our model was predicting evenly at both the high and low ends of our dataset. Our coefficients show that consuming alcohol lowers the average math scores, but there are possible inconsistencies due to smaller sample sizes for higher alcohol consumption levels (Dalc having less sample size than others), leading to higher error values and higher p-values. Regardless of accurate values, we can conclude from this regression that consuming alcohol at any level will decrease your average math score.
+
+\pagebreak
+\newpage
+
+### 3.2.2 Demographics (gender, age, family size, urban)
+\[
+meanGrade = \alpha + \beta_1 Alcohol + \beta_2 Gender + \beta_3 Age + \beta_4 FamSize +\beta_5 Urban+ \epsilon_i, 
+\]
+Where i is equal to each individual student,  $Y_i$ is equal to the math grade, $X_{1i}$ is equal to their alcohol consumption level, $X_{2i}$ is gender, $X_{3i}$ is age, $X_{4i}$ is family size (Less than or equal to 3 members), and $X_{5i}$ is whether or not the household is located in an urban area. 	
+
+```{r, results = 'asis', echo= FALSE, warning = FALSE, message = FALSE}
+fit2 <- lm(meanGrade ~ as.factor(Dalc) + sex + age + famsize + address, data = student)
+stargazer(fit2, type = "latex", title = "Demographics", header = FALSE)
+
+```
+This regression table gives us a better understanding of the data than the first regression, also adding in demographic information such as gender, age, whether the family size is less than or equal to 3, and home address is locate at urban or rural area. Adding a relevant variable can prevent bias in the estimate of the other regression coefficient but can also increase the variance of other regression coefficients.
+
+Once again looking at the residuals we see that there is clear symmetry in predicting evenly at both the high and low ends of our dataset. Observing our coefficients we see that there are some statistically significant variables, such as gender and age. 
+
+Overall we see that: higher alcohol levels result in less average mean score, being male increases your mean score,  being older typically results in lower mean scores, a family size of fewer than 3 results in higher mean scores, and being in an urban household increases mean scores. With some of these variables having high p-values and error values, we can conclude that this regression gives us a good idea of trends, but not totally accurate values.
+
+### 3.2.3 Parental information (education)
+\[
+meanGrade = \alpha + \beta_1 Alcoho + \beta_2 motherEducation + \beta_3 fatherEducation + \epsilon_i, 
+\]
+Where i is equal to each individual student,  $Y_i$ is equal to the math grade, $X_{1i}$ is equal to their alcohol consumption level, $X_{2i}$ is the level of their mother’s education , $X_{3i}$ is the level of their father’s education.
+
+```{r, results = 'asis', echo= FALSE, warning = FALSE, message = FALSE}
+fit3 <- lm(meanGrade ~ as.factor(Dalc) + Medu + Fedu, data = student)
+stargazer(fit3, type = "latex", title = "Parental information", header = FALSE)
+
+```
+
+Compared to the other regression models, this table shows slightly different coefficients for alcohol consumption’s effect on average math scores.  With the addition of two other variables, we can observe that the mother’s education level is a statistically significant variable, and higher levels of education for both mother and father result in higher average math scores.
+
+\pagebreak
+\newpage
+
+# 4. Conclusion
+
+From our study, we can conclude that higher levels of alcohol consumption end up in a decrease in exam grades. Besides alcohol consumption, there were no significant correlations between student academic performance and other possible variables, such as age or family size. Some of these non-significant variables can be explained by our limited sample size relative to the true population, as our study participants were selected through only two high schools in Portugal. For our study’s shortcomings and possible future directions, we believe that a larger subject size of students from different populations would’ve allowed for clearer data trends and possibly new significant correlations. Working with a broader range of potential confounding variables would help us understand this initial relationship (between alcohol consumption and average test score) further as well. Although there won’t be any novel policy implications that arise from this study, this study does help signal the harms and effects that come with alcohol consumption for young students.
+
+# References
+Balsa, A. I., Giuliano, L. M., & French, M. T. 2011. ["The effects of alcohol use on academic achievement in high school."](https://doi.org/10.1016/j.econedurev.2010.06.015) *Economics of Education Review*
+
+Bonnie, R. J., Mary Ellen O'Connell, & National Research Council (US) and Institute of Medicine
+(US) Committee on Developing a Strategy to Reduce and Prevent Underage
+Drinking. 2013. ["Drinking and Coming of Age in a Cross-Cultural Perspective."](https://www.ncbi.nlm.nih.gov/books/NBK37620/) *NIH*
+
+Cortland Area Communities That Care. 2020. ["Teen Drinking in Europe Vs. the United States."](https://www.cortlandareactc.org/post/teen-drinking-in-europe-vs-the-united-states) *CACTC*
+
+Cortez, P., & Silva, A. 2008. ["USING DATA MINING TO PREDICT SECONDARY SCHOOL STUDENT PERFORMANCE."](http://www3.dsi.uminho.pt/pcortez/student.pdf) *University of Minho*
+
+Devaux, M., & Vuik, S. 2021. ["The relationship between alcohol consumption and educational outcomes in children"](https://www.oecd-ilibrary.org/sites/8f9105c7-en/index.html?itemId=/content/component/8f9105c7-en#section-d1e15020) *OECD*
+
+El Ansari, W., Stock, C., & Mills, C. 2013. ["Is alcohol consumption associated with poor academic achievement in university students?"](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3843305/) *International Journal of Preventive Medicine*
+
+National Institute on Alcohol Abuse and Alcoholism. 2022. ["Alcohol Facts and Statistics."](https://www.niaaa.nih.gov/publications/brochures-and-fact-sheets/alcohol-facts-and-statistics) *NIAAA*
+
+Schmengler, H., Peeters, M., Kunst, A. E., Oldehinkel, A. J., & Vollebergh, W. A. M. 2022. ["Educational level and alcohol use in adolescence and early adulthood—The role of social causation and health-related selection—The TRAILS Study"](https://doi.org/10.1371/journal.pone.0261606) *PLOS*
+
+
+
